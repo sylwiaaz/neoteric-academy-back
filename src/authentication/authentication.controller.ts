@@ -8,8 +8,6 @@ import User from 'users/user.interface';
 import UserWithEmailAlreadyExistedException from '../exceptions/userWithEmailAlreadyExistedException';
 import WrongCredentialsException from '../exceptions/wrongCredentialsException';
 import Controller from '../interfaces/controller.interface';
-import validationMiddleware from '../middleware/validation.middleware';
-// import CreateUserDto from '../users/user.dto';
 import userModel from './../users/user.model';
 
 class AuthenticationController implements Controller {
@@ -39,6 +37,7 @@ class AuthenticationController implements Controller {
       const user = await this.user.create({
         ...userData,
         password: hashedPassword,
+        // token: '',
       });
       user.password = '';
       response.send(user);
@@ -53,18 +52,21 @@ class AuthenticationController implements Controller {
       if (isPasswordMatching) {
         user.password = '';
         const tokenData = this.createToken(user);
+        // const updatedUser = await this.user
+        // .findOneAndUpdate({ _id: user._id }, { token: tokenData.token });
+
         response.setHeader('Set-Cookie', [this.createCookie(tokenData)]);
-        response.send(user);
+        // response.send({updatedUser});
+        response.send({user, tokenData});
       } else {
         next(new WrongCredentialsException());
       }
     } else {
-
       next(new WrongCredentialsException());
     }
   }
 
-  private loggingOut = (request: express.Request, response: express.Response) => {
+  private loggingOut = async (request: express.Request, response: express.Response) => {
     response.setHeader('Set-Cookie', ['Authorization=;Max-age=0']);
     response.sendStatus(200);
   }
