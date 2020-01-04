@@ -1,4 +1,5 @@
 interface Offer {
+    _id: string;
     jobTitle: string;
     tech: string;
     salary: string;
