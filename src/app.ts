@@ -33,7 +33,7 @@ class App {
         } = process.env;
 
         mongoose.connect(`mongodb+srv://${MONGO_USER}:${MONGO_PASSWORD}${MONGO_PATH}`,
-        { useUnifiedTopology: true, useNewUrlParser: true })
+        { useUnifiedTopology: true, useNewUrlParser: true, useFindAndModify: false })
             .then(() => {
                 console.log('connected to db.');
             }).catch(() => {
