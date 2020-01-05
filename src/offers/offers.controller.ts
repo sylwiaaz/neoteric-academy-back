@@ -1,5 +1,8 @@
 import express from 'express';
-import Controller from 'interfaces/controller.interface';
+import NotFoundOfferException from '../exceptions/notFoundOfferException';
+import OffersNotFoundException from '../exceptions/offersNotFoundException';
+import Controller from '../interfaces/controller.interface';
+import authMiddleware from '../middleware/auth.middleware';
 import offerModel from './offer.model';
 
 class OffersController implements Controller {
@@ -13,91 +16,46 @@ class OffersController implements Controller {
   public initializeRoutes() {
     this.router.get(this.path, this.getAllOffers);
     this.router.get(`${this.path}/offer/:id`, this.getOfferById);
-    this.router.get(`${this.path}/:place`, this.getOffersByPlace);
-    this.router.get(`${this.path}/:place/:tech`, this.getOffersByPlaceAndTech);
-    this.router.get(`${this.path}/:place/:tech/:exp`, this.getOffersByExp);
-    this.router.get(`${this.path}/:place/:tech/:exp/:minSal`, this.getOffersByMinSal);
-    this.router.get(`${this.path}/:place/:tech/:exp/:minSal/:maxSal`, this.getOffersByAllFilters);
+    this.router.get(`${this.path}/:place`, this.getOffersByFilters);
+    this.router.get(`${this.path}/:place/:tech`, this.getOffersByFilters);
+    this.router.get(`${this.path}/:place/:tech/:exp`, this.getOffersByFilters);
+    this.router.get(`${this.path}/:place/:tech/:exp/:minSal`, this.getOffersByFilters);
+    this.router.get(`${this.path}/:place/:tech/:exp/:minSal/:maxSal`, this.getOffersByFilters);
+    this.router.get(`/remote`, authMiddleware, this.getRemoteOffers);
   }
 
-  private getAllOffers = ( request: express.Request, response: express.Response ) => {
-    offerModel.find().then((offers) => {
-      response.send(offers);
-    });
+  private getAllOffers = async (request: express.Request, response: express.Response) => {
+    const offers = await offerModel.find();
+    response.send(offers);
   }
 
-  private getOfferById = ( request: express.Request, response: express.Response ) => {
+  private getOfferById = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
     const id = request.params.id;
-    offerModel.findById(id).then((offers) => {
+    const offer = await offerModel.findById(id);
+    if (offer) {
+      response.send(offer);
+    } else {
+      next(new NotFoundOfferException(id));
+    }
+  }
+
+  private getRemoteOffers = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
+    const offers = await offerModel.find({ remote: true });
+    if  (offers.length > 0) {
       response.send(offers);
-    });
-  }
-
-  private getOffersByPlace = async ( request: express.Request, response: express.Response,
-    next: express.NextFunction ) => {
-    const place = this.capitalize(request.params.place);
-    let offers;
-    if (place === 'All') {
-      offers = await offerModel.find();
     } else {
-      offers = await offerModel.find({ companyPlace: place });
+      next(new OffersNotFoundException());
     }
-    response.send(offers);
   }
 
-  private getOffersByPlaceAndTech = async ( request: express.Request, response: express.Response,
-    next: express.NextFunction ) => {
-    const place = this.capitalize(request.params.place);
-    const tech = request.params.tech.toLowerCase();
-    let offers;
-    if (place === 'All') {
-      offers = await offerModel.find({ tech });
-    } else {
-      offers = await offerModel.find({ companyPlace: place, tech });
-    }
-    response.send(offers);
-  }
-
-  private getOffersByExp = async ( request: express.Request, response: express.Response ) => {
-    let { place, tech, exp }: any = request.params;
-    place = place === 'all' ? /(.*?)/ : this.capitalize(place);
-    tech = tech === 'all' ? /(.*?)/ : tech.toLowerCase();
-    exp = exp === 'all' ? /(.*?)/ : exp.toLowerCase();
-    const offers = await offerModel.find({
-        companyPlace: place,
-        tech,
-        experienceLevel: exp,
-      });
-    response.send(offers);
-  }
-
-  private getOffersByMinSal = async ( request: express.Request,
-                                      response: express.Response,
-                                      next: express.NextFunction ) => {
-  let { place, tech, exp, minSal }: any = request.params;
-  minSal = this.changeSalStringtoNumber(minSal);
-  place = place === 'all' ? /(.*?)/ : this.capitalize(place);
-  tech = tech === 'all' ? /(.*?)/ : tech.toLowerCase();
-  exp = exp === 'all' ? /(.*?)/ : exp.toLowerCase();
-
-  const offers = await offerModel.find({
-    companyPlace: place,
-    tech,
-    experienceLevel: exp,
-    maxSal: {$gte: minSal},
-  });
-  response.send(offers);
-}
-
-private getOffersByAllFilters = async ( request: express.Request, response: express.Response,
-  next: express.NextFunction ) => {
+private getOffersByFilters = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
 
   let { place, tech, exp, minSal, maxSal}: any = request.params;
-  minSal = this.changeSalStringtoNumber(minSal);
-  maxSal = this.changeSalStringtoNumber(maxSal);
-  place = place === 'all' ? /(.*?)/ : this.capitalize(place);
-  tech = tech === 'all' ? /(.*?)/ : tech.toLowerCase();
-  exp = exp === 'all' ? /(.*?)/ : exp.toLowerCase();
+  place = (place === 'all' || place === undefined || place === 'remote') ? /(.*?)/ : this.capitalize(place);
+  tech = (tech === 'all' || tech === undefined) ? /(.*?)/ : tech.toLowerCase();
+  exp = (exp === 'all' || exp === undefined) ? /(.*?)/ : exp.toLowerCase();
+  minSal = minSal === undefined ? 0 : this.changeSalStringtoNumber(minSal);
+  maxSal = maxSal === undefined ? 51000 : this.changeSalStringtoNumber(maxSal);
 
   const offers = await offerModel.find({
       companyPlace: place,
@@ -106,7 +64,12 @@ private getOffersByAllFilters = async ( request: express.Request, response: expr
       minSal: {$lte: maxSal},
       maxSal: {$gte: minSal},
   });
-  response.send(offers);
+
+  if ( offers.length > 0) {
+    response.send(offers);
+  } else {
+    next(new OffersNotFoundException());
+  }
 }
 
   private capitalize(s: string): any {
