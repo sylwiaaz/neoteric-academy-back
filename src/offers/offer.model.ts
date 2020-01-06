@@ -16,6 +16,8 @@ const offerSchema = new mongoose.Schema({
     experienceLevel: String,
     techStack: [String],
     location: [Number],
+    remote: String,
+    premium: Boolean,
 });
 
 const offerModel = mongoose.model<Offer & mongoose.Document>('Offer', offerSchema);
