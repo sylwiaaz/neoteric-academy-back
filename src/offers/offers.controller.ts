@@ -16,12 +16,12 @@ class OffersController implements Controller {
   public initializeRoutes() {
     this.router.get(this.path, this.getAllOffers);
     this.router.get(`${this.path}/offer/:id`, this.getOfferById);
+    this.router.get(`${this.path}/offer/:id/premium`, authMiddleware, this.getPremiumOffer);
     this.router.get(`${this.path}/:place`, this.getOffersByFilters);
     this.router.get(`${this.path}/:place/:tech`, this.getOffersByFilters);
     this.router.get(`${this.path}/:place/:tech/:exp`, this.getOffersByFilters);
     this.router.get(`${this.path}/:place/:tech/:exp/:minSal`, this.getOffersByFilters);
     this.router.get(`${this.path}/:place/:tech/:exp/:minSal/:maxSal`, this.getOffersByFilters);
-    this.router.get(`/remote`, authMiddleware, this.getRemoteOffers);
   }
 
   private getAllOffers = async (request: express.Request, response: express.Response) => {
@@ -39,19 +39,29 @@ class OffersController implements Controller {
     }
   }
 
-  private getRemoteOffers = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
-    const offers = await offerModel.find({ remote: true });
-    if  (offers.length > 0) {
-      response.send(offers);
+  private getPremiumOffer = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
+    const id = request.params.id;
+    const offer = await offerModel.findOne({_id: id, premium: true});
+    if (offer) {
+      response.send(offer);
     } else {
-      next(new OffersNotFoundException());
+      next(new NotFoundOfferException(id));
     }
   }
 
 private getOffersByFilters = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
 
   let { place, tech, exp, minSal, maxSal}: any = request.params;
-  place = (place === 'all' || place === undefined || place === 'remote') ? /(.*?)/ : this.capitalize(place);
+  let remote: any = /(.*?)/;
+  if (place === 'all' || place === undefined) {
+    place = /(.*?)/;
+  } else if (place === 'remote') {
+    place = /(.*?)/;
+    remote = 'true';
+  } else {
+    place = this.capitalize(place);
+  }
+
   tech = (tech === 'all' || tech === undefined) ? /(.*?)/ : tech.toLowerCase();
   exp = (exp === 'all' || exp === undefined) ? /(.*?)/ : exp.toLowerCase();
   minSal = minSal === undefined ? 0 : this.changeSalStringtoNumber(minSal);
@@ -61,6 +71,7 @@ private getOffersByFilters = async (request: express.Request, response: express.
       companyPlace: place,
       tech,
       experienceLevel: exp,
+      remote,
       minSal: {$lte: maxSal},
       maxSal: {$gte: minSal},
   });
