@@ -2,8 +2,8 @@ import bodyParser from 'body-parser';
 import cookieParser from 'cookie-parser';
 import 'dotenv/config';
 import express from 'express';
-import Controller from 'interfaces/controller.interface';
 import mongoose from 'mongoose';
+import Controller from './interfaces/controller.interface';
 import errorMiddleware from './middleware/error.middleware';
 
 class App {
@@ -25,6 +25,11 @@ class App {
             console.log(`App listening on the port ${this.port}`);
         });
     }
+
+    public getServer() {
+        return this.app;
+    }
+
     private connectToTheDatabase() {
         const {
             MONGO_USER,
@@ -33,7 +38,7 @@ class App {
         } = process.env;
 
         mongoose.connect(`mongodb+srv://${MONGO_USER}:${MONGO_PASSWORD}${MONGO_PATH}`,
-        { useUnifiedTopology: true, useNewUrlParser: true, useFindAndModify: false })
+            { useUnifiedTopology: true, useNewUrlParser: true, useFindAndModify: false })
             .then(() => {
                 console.log('connected to db.');
             }).catch(() => {
@@ -44,7 +49,7 @@ class App {
 
     private initializeErrorHandling() {
         this.app.use(errorMiddleware);
-      }
+    }
 
     private setHeaders() {
         this.app.use((request, response, next) => {
