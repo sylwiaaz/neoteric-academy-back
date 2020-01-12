@@ -1,6 +1,6 @@
-import * as bcrypt from 'bcrypt';
+import bcrypt from 'bcrypt';
 import 'dotenv/config';
-import * as express from 'express';
+import express from 'express';
 import WrongCredentialsException from '../exceptions/wrongCredentialsException';
 import Controller from '../interfaces/controller.interface';
 import userModel from './../users/user.model';
@@ -42,11 +42,7 @@ class AuthenticationController implements Controller {
       if (isPasswordMatching) {
         user.password = '';
         const tokenData = this.authenticationService.createToken(user);
-        // const updatedUser = await this.user
-        // .findOneAndUpdate({ _id: user._id }, { token: tokenData.token });
-
         response.setHeader('Set-Cookie', [this.authenticationService.createCookie(tokenData)]);
-        // response.send({updatedUser});
         response.send({ user, tokenData });
       } else {
         next(new WrongCredentialsException());
@@ -58,9 +54,8 @@ class AuthenticationController implements Controller {
 
   private loggingOut = async (request: express.Request, response: express.Response) => {
     response.setHeader('Set-Cookie', ['Authorization=;Max-age=0;path=/']);
-    response.send({ message: 'user are loggout' });
+    response.send({ message: 'user is logged out' });
   }
-
 }
 
 export default AuthenticationController;
