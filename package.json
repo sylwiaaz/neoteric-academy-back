@@ -5,8 +5,11 @@
   "main": "src/server.ts",
   "scripts": {
     "test": "jest",
-    "dev": "ts-node ./src/server.ts",
-    "start:server": "nodemon src/server.ts"
+    "start:server": "nodemon src/server.ts",
+    "prod:serve": "node dist/server.js",
+    "start": "npm run build && npm run prod:serve",
+    "ts:build": "tsc -p .",
+    "build": "npm run ts:build"
   },
   "keywords": [],
   "author": "",
