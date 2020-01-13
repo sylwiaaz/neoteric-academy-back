@@ -8,7 +8,7 @@ import errorMiddleware from './middleware/error.middleware';
 
 class App {
     public app: express.Application;
-    public port = process.env.PORT;
+    public port = process.env.PORT || 5000;
 
     constructor(controllers: Controller[]) {
         this.app = express();
