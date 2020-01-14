@@ -9,6 +9,7 @@ import errorMiddleware from './middleware/error.middleware';
 class App {
     public app: express.Application;
     public port = process.env.PORT || 5000;
+    private path = 'https://sylwiaaz.github.io' || 'http://localhost:4200';
 
     constructor(controllers: Controller[]) {
         this.app = express();
@@ -54,7 +55,7 @@ class App {
     private setHeaders() {
         this.app.use((request, response, next) => {
             response.setHeader('Content-Type', 'application/json');
-            response.setHeader('Access-Control-Allow-Origin', '*');
+            response.setHeader('Access-Control-Allow-Origin', this.path);
             response.setHeader('Access-Control-Allow-Credentials', 'true');
             response.setHeader('Access-Control-Allow-Headers',
                 'Origin, X-Requested-With, Content-Type, Accept, Access-Control-Allow-Origin');
