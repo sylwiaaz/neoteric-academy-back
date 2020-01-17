@@ -1,9 +1,11 @@
 import express from 'express';
+import RequestWithUser from 'interfaces/requestWithUser.interface';
 import InvalidIdOfferException from '../exceptions/invalidIdOfferException';
 import NotFoundOfferException from '../exceptions/notFoundOfferException';
 import OffersNotFoundException from '../exceptions/offersNotFoundException';
 import Controller from '../interfaces/controller.interface';
 import authMiddleware from '../middleware/auth.middleware';
+import Offer from './offer.interface';
 import offerModel from './offer.model';
 
 class OffersController implements Controller {
@@ -23,6 +25,7 @@ class OffersController implements Controller {
     this.router.get(`${this.path}/:place/:tech/:exp`, this.getOffersByFilters);
     this.router.get(`${this.path}/:place/:tech/:exp/:minSal`, this.getOffersByFilters);
     this.router.get(`${this.path}/:place/:tech/:exp/:minSal/:maxSal`, this.getOffersByFilters);
+    this.router.post(this.path, authMiddleware, this.createOffer);
   }
 
   private getAllOffers = async (request: express.Request, response: express.Response) => {
@@ -86,6 +89,17 @@ class OffersController implements Controller {
     } else {
       next(new OffersNotFoundException());
     }
+  }
+
+  private createOffer = async (requestWithUser: express.Request, response: express.Response) => {
+    const req = requestWithUser as RequestWithUser;
+    const offerData = req.body;
+    const createdOffer = new offerModel({
+      ...offerData,
+      authorId: req.user._id,
+    });
+    const savedOffer = await createdOffer.save();
+    response.send(savedOffer);
   }
 
   private capitalize(s: string): any {
