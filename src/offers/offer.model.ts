@@ -18,6 +18,9 @@ const offerSchema = new mongoose.Schema({
     location: [Number],
     remote: String,
     premium: Boolean,
+    description: String,
+    applyWay: String,
+    authorId: String,
 });
 
 const offerModel = mongoose.model<Offer & mongoose.Document>('Offer', offerSchema);
