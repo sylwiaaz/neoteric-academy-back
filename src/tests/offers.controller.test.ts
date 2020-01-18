@@ -14,7 +14,7 @@ describe('test offerController', () => {
             const res = await request(app.getServer())
                 .get(offerController.path);
             expect(res.status).toEqual(200);
-            expect(res.body.length).toEqual(17);
+            expect(res.body.length).toBeGreaterThanOrEqual(17);
         });
     });
     describe('GET /offers/offer/:id', () => {
