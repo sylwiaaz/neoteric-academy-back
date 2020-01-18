@@ -5,6 +5,8 @@ const offerSchema = new mongoose.Schema({
     jobTitle: String,
     tech: String,
     salary: String,
+    minSal: Number,
+    maxSal: Number,
     date: String,
     companyName: String,
     companyAddress: String,

@@ -3,6 +3,8 @@ interface Offer {
     jobTitle: string;
     tech: string;
     salary: string;
+    minSal: number;
+    maxSal: number;
     date: string | Date;
     companyName: string;
     companyAddress: string;
